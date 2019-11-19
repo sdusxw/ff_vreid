@@ -24,6 +24,7 @@ set(lib_dir "${PROJECT_BINARY_DIR}")
 set(SOLUTION_INCLUDE_DIRS
 	${src_dir}/common
 	/usr/local/include
+    /usr/include/jsoncpp
 )
 set(SOLUTION_LINK_DIRS
 	/usr/local/lib64
