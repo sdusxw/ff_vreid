@@ -233,7 +233,12 @@ int main(int argc, const char **argv) {
         cout << "Read Server Configure Fail!" << endl;
     }
     Server svr;
-    svr.Post("/chpAnalyze", [](const Request &req, Response &res) {
+    svr.Post("/vreid", [](const Request &req, Response &res) {
+        cout << req.body << endl;
+        auto body = "{\"code\":0}";
+        res.set_content(body, "application/json");
+    });
+    /*svr.Post("/chpAnalyze", [](const Request &req, Response &res) {
         Json::Value json_res;
         Json::StreamWriterBuilder writerBuilder;
         std::ostringstream os;
@@ -329,7 +334,7 @@ int main(int argc, const char **argv) {
         file_info.lpr_res_json = body;
         g_file_queue.push(file_info);
     });
-    
+    */
     thread_save_file = boost::thread(boost::bind(&task_save_file));
   
     cout << "The server started at port " << server_conf.server_port << "..." << endl;
