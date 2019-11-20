@@ -30,7 +30,7 @@
 #include <fstream>
 #include <string>
 
-#include "cppkafka/producer.h"
+#include "cppkafka/utils/buffered_producer.h"
 #include "cppkafka/configuration.h"
 
 #include "lpr_alg.h"
@@ -43,10 +43,11 @@
 using namespace httplib;
 using namespace std;
 
-using cppkafka::Producer;
+using cppkafka::BufferedProducer;
 using cppkafka::Configuration;
 using cppkafka::Topic;
 using cppkafka::MessageBuilder;
+using cppkafka::Message;
 
 #define MAX_BUFF_LENGTH     (10*1024*1024)  //共享内存大小10M
 
@@ -241,7 +242,18 @@ void task_kafka_log()
     };
     
     // Create the producer
-    Producer producer(config);
+    BufferedProducer<string> producer(config);
+    
+    // Set a produce success callback
+    producer.set_produce_success_callback([](const Message& msg) {
+        cout << "Successfully produced message with payload " << msg.get_payload() << endl;
+    });
+    // Set a produce failure callback
+    producer.set_produce_failure_callback([](const Message& msg) {
+        cout << "Failed to produce message with payload " << msg.get_payload() << endl;
+        // Return false so we stop trying to produce this message
+        return false;
+    });
     
     cout << "Producing messages into topic " << topic_name << endl;
     
@@ -251,8 +263,9 @@ void task_kafka_log()
         cout << log_msg << endl;
         // Set the payload on this builder
         builder.payload(log_msg);
-        // Actually produce the message we've built
-        producer.produce(builder);
+        
+        // Add the message we've built to the buffered producer
+        producer.add_message(builder);
         // Flush all produced messages
         cout << "AAA" << endl;
         producer.flush();
