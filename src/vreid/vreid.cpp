@@ -246,7 +246,7 @@ void task_kafka_log()
     
     // Set a produce success callback
     producer.set_produce_success_callback([](const Message& msg) {
-        cout << "Successfully produced message with payload " << msg.get_payload() << endl;
+        //cout << "Successfully produced message with payload " << msg.get_payload() << endl;
     });
     // Set a produce failure callback
     producer.set_produce_failure_callback([](const Message& msg) {
@@ -267,9 +267,7 @@ void task_kafka_log()
         // Add the message we've built to the buffered producer
         producer.add_message(builder);
         // Flush all produced messages
-        cout << "AAA" << endl;
         producer.flush();
-        cout << "BBB" << endl;
     }
 }
 
@@ -386,12 +384,12 @@ int main(int argc, const char **argv) {
                 std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
                 jsonWriter->write(json_res, &os);
                 string alpr_body = os.str();
-                cout << "Send:\n" << alpr_body << endl;
+                //cout << "Send:\n" << alpr_body << endl;
                 JsonPusher json_pusher;
                 json_pusher.initialize();
                 string json_post_url = "http://172.31.49.252/data-collect/report/engine";
                 string json_ret = json_pusher.push_json(json_post_url, alpr_body);
-                cout << "Josn Return:\n" << json_ret << endl;
+                //cout << "Josn Return:\n" << json_ret << endl;
                 FileInfo file_info;
                 file_info.len = jp.jpg_size;
                 file_info.p = (char*)malloc(file_info.len);
