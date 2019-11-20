@@ -34,6 +34,8 @@
 #include "common.h"
 #include "httplib.h"
 #include "concurrent_queue.h"
+#include "pull_jpg2ram.h"
+#include "push_json.h"
 
 using namespace httplib;
 using namespace std;
@@ -236,7 +238,75 @@ int main(int argc, const char **argv) {
     svr.Post("/vreid", [](const Request &req, Response &res) {
         pthread_mutex_lock(&mutex_);
         //1. curl https://
+        long res_receivetime=get_unix_ts_ms();//接收图片时间
+        string res_passId;
+        string res_path;
+        string res_plateNo="unrecognized";
+        string res_plateColor="0";
+        Json::Value res_json_rect;
+    
+        std::string msg_jpg = req.body;
+        Json::Reader reader;
+        Json::Value json_object;
         
+        if (!reader.parse(msg_jpg, json_object))
+        {
+            //JSON格式错误导致解析失败
+            cout << "[json]Kafka Topic2解析失败" << endl;
+        }else{
+            //处理kafka的Topic2消息
+            string string_img_url = json_object["imgURL"].asString();
+            res_passId = json_object["passId"].asString();
+            res_path = json_object["path"].asString();
+            //下载图片
+            JpgPuller jp;
+            jp.initialize();
+            if(jp.pull_image((char*)string_img_url.c_str()))
+            {
+                //调用识别引擎
+                string res = pusher.push_image(url, jp.p_jpg_image, jp.jpg_size);
+                if(vlpr_analyze((const unsigned char *)jp.p_jpg_image, jp.jpg_size, pvpr))
+                {
+                    res_plateNo = pvpr->license;
+                    res_plateColor = std::to_string(pvpr->nColor);
+                    res_json_rect["left"]=pvpr->left;
+                    res_json_rect["right"]=pvpr->right;
+                    res_json_rect["top"]=pvpr->top;
+                    res_json_rect["bottom"]=pvpr->bottom;
+                }
+                //上传识别结果到云平台数据汇聚接口
+                long res_sendtime = get_unix_ts_ms();
+                Json::Value json_result;
+                json_result["passId"]=res_passId;
+                json_result["receivetime"]=(Json::Value::UInt64)res_receivetime;
+                json_result["sendtime"]=(Json::Value::UInt64)res_sendtime;
+                json_result["path"]=res_path;
+                json_result["engineType"]="sjk-beichuang-lpa";
+                json_result["engineId"]="beichuang_01";
+                json_result["plateNo"]=res_plateNo;
+                json_result["plateColor"]=res_plateColor;
+                json_result["rect"]=res_json_rect;
+                json_result["vehicleType"]="SUV";
+                json_result["vehicleBrand"]="rolls-royce";
+                json_result["vehicleModel"]="cullinan";
+                json_result["vehicleYear"]="2035";
+                json_result["vehicleColor"]="2";
+                json_result["duration"]=(Json::Value::UInt64)(res_sendtime-res_receivetime);
+
+                json_res.append(json_result);
+                std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
+                jsonWriter->write(json_res, &os);
+                string alpr_body = os.str();
+                cout << "Send:\n" << alpr_body << endl;
+                JsonPusher json_pusher;
+                json_pusher.initialize();
+                string json_post_url = "http://172.31.49.252/data-collect/report/engine";
+                string json_ret = json_pusher.push_json(json_post_url, alpr_body);
+                cout << "Josn Return:\n" << json_ret << endl;
+            }else{
+                printf("Pull_jpg_error");
+            }
+        }
         pthread_mutex_unlock(&mutex_);
         cout << req.body << endl;
         auto body = "{\"code\":0}";

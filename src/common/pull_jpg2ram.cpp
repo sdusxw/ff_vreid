@@ -94,7 +94,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb,
 bool JpgPuller::initialize()
 {
     pthread_mutex_init(&mutex_lock, NULL);
-    p_jpg_image = (char*) malloc(2000000);    //jpg图像大小不超过2M
+    p_jpg_image = (char*) malloc(4000000);    //jpg图像大小不超过4M
     if (p_jpg_image)
     return true;
     else
