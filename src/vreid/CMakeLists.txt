@@ -17,4 +17,4 @@ add_executable(vreid
     TH_ErrorDef.h
 )
 
-target_link_libraries(vreid pthread jsoncpp common boost_thread boost_system thplateid curl ssl crypto cppkafka)
+target_link_libraries(vreid pthread jsoncpp common boost_thread boost_system thplateid curl ssl crypto cppkafka rdkafka)
