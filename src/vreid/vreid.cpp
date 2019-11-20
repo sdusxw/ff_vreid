@@ -30,6 +30,9 @@
 #include <fstream>
 #include <string>
 
+#include "cppkafka/producer.h"
+#include "cppkafka/configuration.h"
+
 #include "lpr_alg.h"
 #include "common.h"
 #include "httplib.h"
@@ -39,6 +42,11 @@
 
 using namespace httplib;
 using namespace std;
+
+using cppkafka::Producer;
+using cppkafka::Configuration;
+using cppkafka::Topic;
+using cppkafka::MessageBuilder;
 
 #define MAX_BUFF_LENGTH     (10*1024*1024)  //共享内存大小10M
 
@@ -71,9 +79,15 @@ void task_http_handler();
 
 concurrent_queue<FileInfo> g_file_queue;
 
+concurrent_queue<string> g_kafka_log_queue;
+
 boost::thread thread_save_file;
 
+boost::thread thread_kafka_log;
+
 void task_save_file();
+
+void task_kafka_log();
 
 string dump_headers(const Headers &headers) {
     string s;
@@ -210,6 +224,39 @@ void task_save_file()
     }
 }
 
+void task_kafka_log()
+{
+    string brokers;
+    string topic_name;
+    
+    brokers = "172.31.3.1:9092,172.31.3.2:9092,172.31.3.3:9092";
+    topic_name = "picturelog";
+    
+    // Create a message builder for this topic
+    MessageBuilder builder(topic_name);
+    
+    // Construct the configuration
+    Configuration config = {
+        { "metadata.broker.list", brokers }
+    };
+    
+    // Create the producer
+    Producer producer(config);
+    
+    cout << "Producing messages into topic " << topic_name << endl;
+    
+    while (true) {
+        string log_msg;
+        g_kafka_log_queue.wait_and_pop(log_msg);
+        // Set the payload on this builder
+        builder.payload(log_msg);
+        // Actually produce the message we've built
+        producer.produce(builder);
+        // Flush all produced messages
+        producer.flush();
+    }
+}
+
 int main(int argc, const char **argv) {
     //算法库初始化
     if(!vlpr_init())
@@ -254,6 +301,9 @@ int main(int argc, const char **argv) {
             //JSON格式错误导致解析失败
             cout << "[json]Kafka Topic2解析失败" << endl;
         }else{
+            //kafka日志
+            Json::Value json_kafka_log;
+            json_kafka_log["type"]="sjk-beichuang-lpa";
             //处理kafka的Topic2消息
             string string_img_url = json_object["imgURL"].asString();
             res_passId = json_object["passId"].asString();
@@ -286,6 +336,7 @@ int main(int argc, const char **argv) {
                 Json::StreamWriterBuilder writerBuilder;
                 std::ostringstream os;
                 long res_sendtime = get_unix_ts_ms();
+                json_kafka_log["logtime"]=(Json::Value::UInt64)res_sendtime;
                 Json::Value json_result;
                 json_result["passId"]=res_passId;
                 json_result["receivetime"]=(Json::Value::UInt64)res_receivetime;
@@ -302,7 +353,19 @@ int main(int argc, const char **argv) {
                 json_result["vehicleYear"]="2035";
                 json_result["vehicleColor"]="2";
                 json_result["duration"]=(Json::Value::UInt64)(res_sendtime-res_receivetime);
-
+                //kafka日志处理
+                std::string log_msg;
+                log_msg = res_passId;
+                log_msg += "|";
+                log_msg += res_plateNo;
+                log_msg += "|";
+                log_msg += res_plateColor;
+                log_msg += "|";
+                log_msg += std::to_string((int)(res_sendtime-res_receivetime));
+                json_kafka_log["msg"]=log_msg;
+                Json::FastWriter log_writer;
+                string str_kafka_log = log_writer.write(json_kafka_log);
+                g_kafka_log_queue.push(str_kafka_log);
                 json_res.append(json_result);
                 std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
                 jsonWriter->write(json_res, &os);
@@ -329,104 +392,10 @@ int main(int argc, const char **argv) {
         auto body = "{\"code\":0}";
         res.set_content(body, "application/json");
     });
-    /*svr.Post("/chpAnalyze", [](const Request &req, Response &res) {
-        Json::Value json_res;
-        Json::StreamWriterBuilder writerBuilder;
-        std::ostringstream os;
-        bool have_jpg = false;
-        std::string file_name;
-        std::string file_content;
-        int file_len;
-        for (const auto &x : req.files) {
-            const auto &name = x.first;
-            const auto &file = x.second;
-            if(name != "file") continue;
-            if(have_jpg) cout << "more than one pic per post" << endl;
-            file_content = req.body.substr(file.offset, file.length);
-            file_name = file.filename;
-            file_len = (int)file.length;
-            have_jpg = true;
-        }
-        cout << get_time_ms() << "\t";
-        cout << file_name << "\t";
-        cout << file_len << "\t";
-        std::string body;
-        if(have_jpg)
-        {
-            clock_t t=clock();
-            pthread_mutex_lock(&mutex_);
-            if(vlpr_analyze((const unsigned char *)file_content.c_str(), file_len, pvpr))
-            {
-                cout << (clock()-t)/1000 << "\t";
-                cout << pvpr->license << "\t" << pvpr->color << endl;
-                Json::Value json_result;
-                json_result["fx_device_id"]="beichuang_01";
-                json_result["fx_duration"]=(int)((clock()-t)/1000);
-                json_result["vehlic"]=pvpr->license;
-                json_result["lic_color"]=pvpr->nColor;
-                Json::Value json_rect;
-                json_rect["left"]=pvpr->left;
-                json_rect["right"]=pvpr->right;
-                json_rect["top"]=pvpr->top;
-                json_rect["bottom"]=pvpr->bottom;
-                json_result["rect"]=json_rect;
-                Json::Value json_results;
-                json_results["code"]=0;
-                json_results["message"]="successd";
-                json_results["filename"]=file_name;
-                json_results["vender_id"]="sjk-beichuang-lpa";
-                json_results["result"]=json_result;
-                json_res["code"]=0;
-                json_res["message"]="successd";
-                Json::Value array;
-                array.append(json_results);
-                json_res["results"]=array;
-            }else{
-                cout << (clock()-t)/1000 << "\t";
-                cout << "Fail" << endl;
-                
-                Json::Value json_results;
-                json_results["code"]=2;
-                json_results["message"]="NO_PLATE";
-                json_results["filename"]=file_name;
-                json_results["vender_id"]="sjk-beichuang-lpa";
-                
-                json_res["code"]=0;
-                json_res["message"]="successd";
-                Json::Value array;
-                array.append(json_results);
-                json_res["results"]=array;
-                file_name += ".x.jpg";
-            }
-            pthread_mutex_unlock(&mutex_);
-        }else{
-            Json::Value json_results;
-            json_results["code"]=2;
-            json_results["message"]="NO_PLATE";
-            json_results["filename"]=file_name;
-            json_results["vender_id"]="sjk-beichuang-lpa";
-            
-            json_res["code"]=0;
-            json_res["message"]="successd";
-            Json::Value array;
-            array.append(json_results);
-            json_res["results"]=array;
-            file_name += ".x.jpg";
-        }
-        std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-        jsonWriter->write(json_res, &os);
-        body = os.str();
-        res.set_content(body, "application/json");
-        FileInfo file_info;
-        file_info.len = file_len;
-        file_info.p = (char*)malloc(file_len);
-        memcpy(file_info.p, (const unsigned char *)file_content.c_str(), file_len);
-        file_info.filename = file_name;
-        file_info.lpr_res_json = body;
-        g_file_queue.push(file_info);
-    });
-    */
+    
     thread_save_file = boost::thread(boost::bind(&task_save_file));
+    
+    thread_kafka_log = boost::thread(boost::bind(&task_kafka_log));
   
     cout << "The server started at port " << server_conf.server_port << "..." << endl;
     
