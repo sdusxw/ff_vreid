@@ -252,8 +252,6 @@ void task_kafka_log()
         builder.payload(log_msg);
         // Actually produce the message we've built
         producer.produce(builder);
-        // Flush all produced messages
-        producer.flush();
     }
 }
 
