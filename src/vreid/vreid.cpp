@@ -248,10 +248,15 @@ void task_kafka_log()
     while (true) {
         string log_msg;
         g_kafka_log_queue.wait_and_pop(log_msg);
+        cout << log_msg << endl;
         // Set the payload on this builder
         builder.payload(log_msg);
         // Actually produce the message we've built
         producer.produce(builder);
+        // Flush all produced messages
+        cout << "AAA" << endl;
+        producer.flush();
+        cout << "BBB" << endl;
     }
 }
 
