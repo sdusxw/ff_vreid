@@ -260,7 +260,7 @@ void task_kafka_log()
     while (true) {
         string log_msg;
         g_kafka_log_queue.wait_and_pop(log_msg);
-        cout << log_msg << endl;
+        cout << log_msg;
         // Set the payload on this builder
         builder.payload(log_msg);
         
