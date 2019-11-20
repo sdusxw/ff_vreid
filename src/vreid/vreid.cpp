@@ -264,7 +264,6 @@ int main(int argc, const char **argv) {
             if(jp.pull_image((char*)string_img_url.c_str()))
             {
                 //调用识别引擎
-                string res = pusher.push_image(url, jp.p_jpg_image, jp.jpg_size);
                 if(vlpr_analyze((const unsigned char *)jp.p_jpg_image, jp.jpg_size, pvpr))
                 {
                     res_plateNo = pvpr->license;
@@ -275,6 +274,9 @@ int main(int argc, const char **argv) {
                     res_json_rect["bottom"]=pvpr->bottom;
                 }
                 //上传识别结果到云平台数据汇聚接口
+                Json::Value json_res;
+                Json::StreamWriterBuilder writerBuilder;
+                std::ostringstream os;
                 long res_sendtime = get_unix_ts_ms();
                 Json::Value json_result;
                 json_result["passId"]=res_passId;
