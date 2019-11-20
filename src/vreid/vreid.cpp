@@ -264,14 +264,22 @@ int main(int argc, const char **argv) {
             if(jp.pull_image((char*)string_img_url.c_str()))
             {
                 //调用识别引擎
+                bool b_plate = false;
+                std::string file_name;
                 if(vlpr_analyze((const unsigned char *)jp.p_jpg_image, jp.jpg_size, pvpr))
                 {
+                    b_plate = true;
                     res_plateNo = pvpr->license;
                     res_plateColor = std::to_string(pvpr->nColor);
                     res_json_rect["left"]=pvpr->left;
                     res_json_rect["right"]=pvpr->right;
                     res_json_rect["top"]=pvpr->top;
                     res_json_rect["bottom"]=pvpr->bottom;
+                    file_name = res_path;
+                }
+                else
+                {
+                    file_name = res_path + ".x.jpg";
                 }
                 //上传识别结果到云平台数据汇聚接口
                 Json::Value json_res;
@@ -287,7 +295,7 @@ int main(int argc, const char **argv) {
                 json_result["engineId"]="beichuang_01";
                 json_result["plateNo"]=res_plateNo;
                 json_result["plateColor"]=res_plateColor;
-                json_result["rect"]=res_json_rect;
+                if(b_plate) json_result["rect"]=res_json_rect;
                 json_result["vehicleType"]="SUV";
                 json_result["vehicleBrand"]="rolls-royce";
                 json_result["vehicleModel"]="cullinan";
@@ -305,12 +313,19 @@ int main(int argc, const char **argv) {
                 string json_post_url = "http://172.31.49.252/data-collect/report/engine";
                 string json_ret = json_pusher.push_json(json_post_url, alpr_body);
                 cout << "Josn Return:\n" << json_ret << endl;
+                FileInfo file_info;
+                file_info.len = jp.jpg_size;
+                file_info.p = (char*)malloc(file_info.len);
+                memcpy(file_info.p, (const unsigned char *)jp.p_jpg_image, file_info.len);
+                file_info.filename = file_name;
+                file_info.lpr_res_json = alpr_body;
+                g_file_queue.push(file_info);
             }else{
                 printf("Pull_jpg_error");
             }
+            jp.free_memory();
         }
         pthread_mutex_unlock(&mutex_);
-        cout << req.body << endl;
         auto body = "{\"code\":0}";
         res.set_content(body, "application/json");
     });
