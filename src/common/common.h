@@ -49,6 +49,8 @@ std::string get_time_sec();
 std::string get_time_date();
 //获取Unix时间戳
 long get_unix_ts();
+//获取Unix时间戳毫秒级
+long get_unix_ts_ms();
 //获取ip地址
 std::string get_local_ip();
 //获取ip地址，需要输入网卡设备名称
@@ -71,5 +73,5 @@ int gb2312toutf8(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
 int utf8togb2312(char *inbuf, size_t inlen, char *outbuf, size_t outlen);
 int code_convert(char *from_charset, char *to_charset, char *inbuf,
                  size_t inlen, char *outbuf, size_t outlen);
-*/
+ */
 #endif

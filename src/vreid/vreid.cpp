@@ -234,6 +234,10 @@ int main(int argc, const char **argv) {
     }
     Server svr;
     svr.Post("/vreid", [](const Request &req, Response &res) {
+        pthread_mutex_lock(&mutex_);
+        //1. curl https://
+        
+        pthread_mutex_unlock(&mutex_);
         cout << req.body << endl;
         auto body = "{\"code\":0}";
         res.set_content(body, "application/json");

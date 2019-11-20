@@ -6,9 +6,8 @@
 #include <sys/file.h>
 #include <fstream>
 #include <cstddef>
-/*
 #include <iconv.h>
-*/
+
 std::fstream g_log_file;
 
 std::string get_time_us()
@@ -80,6 +79,17 @@ long get_unix_ts()
     long ts;
     ts = time(&t);
     return ts;
+}
+
+//获取Unix时间戳毫秒级
+long get_unix_ts_ms()
+{
+    long ts_ms = 0;
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    
+    ts_ms = tv.tv_sec*1000 + tv.tv_usec/1000;
+    return ts_ms;
 }
 
 void msg_print(std::string msg)
