@@ -115,10 +115,10 @@ bool vlpr_analyze(const unsigned char *pImage, int len, PVPR pVPR)
     TH_PlateIDResult result[6];
     int nResultNum=1;
     TH_RECT roi_rect;
-    roi_rect.left= (int)w*0.05;
-    roi_rect.right=(int)w*0.95;
-    roi_rect.top = (int)h*0.1;
-    roi_rect.bottom = (int)h*0.98;
+    roi_rect.left= (int)w*0.01;
+    roi_rect.right=(int)w*0.99;
+    roi_rect.top = (int)h*0.01;
+    roi_rect.bottom = (int)h*0.99;
     int nRet=TH_RecogImage(rgb_buf, w, h,  result, &nResultNum, &roi_rect, &c_Config);
     //识别之后释放RGB缓存
     if(rgb_buf)
