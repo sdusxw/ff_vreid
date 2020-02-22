@@ -302,10 +302,10 @@ int main(int argc, const char **argv) {
         long res_receivetime=get_unix_ts_ms();//接收图片时间
         string res_passId;
         string res_path;
-        string res_plateNo="unrecognized";
+        string res_plateNo="E";
         string res_plateColor="0";
         Json::Value res_json_rect;
-    
+        
         std::string msg_jpg = req.body;
         Json::Reader reader;
         Json::Value json_object;
@@ -410,12 +410,10 @@ int main(int argc, const char **argv) {
     thread_save_file = boost::thread(boost::bind(&task_save_file));
     
     thread_kafka_log = boost::thread(boost::bind(&task_kafka_log));
-  
+    
     cout << "The server started at port " << server_conf.server_port << "..." << endl;
     
     svr.listen(server_conf.server_ip.c_str(), server_conf.server_port);
     
     return 0;
 }
-
-// vim: et ts=4 sw=4 cin cino={1s ff=unix
