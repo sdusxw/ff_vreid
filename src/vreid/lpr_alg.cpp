@@ -43,8 +43,9 @@ bool vlpr_init()
         return false;
     char default_province[] = "苏";
     
-    TH_SetRecogThreshold(5,2,&c_Config);
+    TH_SetRecogThreshold(3,1,&c_Config);
     TH_SetEnabledPlateFormat(PARAM_TWOROWYELLOW_ON, &c_Config);
+    TH_SetEnabledPlateFormat(PARAM_NEWENERGY_ON, &c_Config);
     TH_SetEnabledPlateFormat(PARAM_INDIVIDUAL_OFF, &c_Config);
     TH_SetEnabledPlateFormat(PARAM_ARMPOLICE_ON, &c_Config);
     TH_SetEnabledPlateFormat(PARAM_TWOROWARMY_OFF, &c_Config);
