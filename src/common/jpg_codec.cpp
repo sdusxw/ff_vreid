@@ -235,9 +235,9 @@ bool BoonJpegCodec::JpegUnCompress(const char * jpeg_data, int jpeg_size,
 	}
 	catch (jpeg_mem_exception& e)
 	{
-		// 处理压缩过程中抛出的异常
+		// 处理jpg解码过程中抛出的异常
 		jpeg_destroy_decompress(&cinfo);
-		std::cout << "fuck jpeg error" << std::endl;
+		std::cout << "decode jpeg error" << std::endl;
 		b_ret = false;
 	}
 	return b_ret;

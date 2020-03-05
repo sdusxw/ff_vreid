@@ -321,6 +321,7 @@ int main(int argc, const char **argv) {
             //处理kafka的Topic2消息
             string string_img_url = json_object["imgURL"].asString();
             res_passId = json_object["passId"].asString();
+            cout << res_passId << endl;
             res_path = json_object["path"].asString();
             //下载图片
             JpgPuller jp;
