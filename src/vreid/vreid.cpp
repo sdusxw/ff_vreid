@@ -381,7 +381,7 @@ int main(int argc, const char **argv) {
                 json_kafka_log["msg"]=log_msg;
                 Json::FastWriter log_writer;
                 string str_kafka_log = log_writer.write(json_kafka_log);
-                g_kafka_log_queue.push(str_kafka_log);
+                //g_kafka_log_queue.push(str_kafka_log);
                 json_res.append(json_result);
                 std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
                 jsonWriter->write(json_res, &os);
