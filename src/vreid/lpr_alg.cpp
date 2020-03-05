@@ -7,13 +7,13 @@
 
 using namespace std;
 
-#define WIDTH           4096            // Max image width
-#define HEIGHT          2160            // Max image height
+#define WIDTH           8192            // Max image width
+#define HEIGHT          4320            // Max image height
 
 TH_PlateIDCfg c_Config;
 BoonJpegCodec bjc;
-static unsigned char mem1[0x4000];                // 16K
-static unsigned char mem2[100*1024*1024];            // 100M
+static unsigned char mem1[0x8000];                // 16K
+static unsigned char mem2[400*1024*1024];            // 100M
 
 //车牌识别初始化
 bool vlpr_init()
@@ -96,13 +96,13 @@ int pcolor_transfer(int c)
 bool vlpr_analyze(const unsigned char *pImage, int len, PVPR pVPR)
 {
     int w=0;int h=0; int c=3;
-    unsigned char *rgb_buf = (unsigned char *)malloc(4096*2160*3);
+    unsigned char *rgb_buf = (unsigned char *)malloc(8192*4320*3);
     if(rgb_buf==NULL)
     {
         return false;
     }
     bool ret = bjc.JpegUnCompress((char *)pImage, len, (char *)rgb_buf,
-                                  4096*2160*3, w, h, c);
+                                  8192*4320*3, w, h, c);
     if(!ret)
     {
         //JPG解码失败释放缓存
