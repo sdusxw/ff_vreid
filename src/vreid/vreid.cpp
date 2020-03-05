@@ -323,7 +323,7 @@ int main(int argc, const char **argv) {
             res_passId = json_object["passId"].asString();
             cout << res_passId << endl;
             res_path = json_object["path"].asString();
-            cout << res_path << endl;
+            cout << string_img_url << endl;
             //下载图片
             JpgPuller jp;
             jp.initialize();
