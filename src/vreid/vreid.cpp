@@ -392,13 +392,15 @@ int main(int argc, const char **argv) {
                 string json_post_url = "http://172.31.49.252/data-collect/report/engine";
                 string json_ret = json_pusher.push_json(json_post_url, alpr_body);
                 //cout << "Josn Return:\n" << json_ret << endl;
-                FileInfo file_info;
-                file_info.len = jp.jpg_size;
-                file_info.p = (char*)malloc(file_info.len);
-                memcpy(file_info.p, (const unsigned char *)jp.p_jpg_image, file_info.len);
-                file_info.filename = file_name;
-                file_info.lpr_res_json = alpr_body;
-                g_file_queue.push(file_info);
+                if(!b_plate){// only save image when fail to recognize plate
+                    FileInfo file_info;
+                    file_info.len = jp.jpg_size;
+                    file_info.p = (char*)malloc(file_info.len);
+                    memcpy(file_info.p, (const unsigned char *)jp.p_jpg_image, file_info.len);
+                    file_info.filename = file_name;
+                    file_info.lpr_res_json = alpr_body;
+                    g_file_queue.push(file_info);
+                }
             }else{
                 printf("Pull_jpg_error");
             }
