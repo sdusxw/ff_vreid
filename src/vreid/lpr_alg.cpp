@@ -152,3 +152,64 @@ bool vlpr_analyze(const unsigned char *pImage, int len, PVPR pVPR)
         return false;
     }
 }
+
+bool vlpr_analyze2(const unsigned char *pImage, int len, PVPR pVPR, int &rw)
+{
+    int w=0;int h=0; int c=3;
+    unsigned char *rgb_buf = (unsigned char *)malloc(8192*4320*3);
+    if(rgb_buf==NULL)
+    {
+        return false;
+    }
+    bool ret = bjc.JpegUnCompress((char *)pImage, len, (char *)rgb_buf,
+                                  8192*4320*3, w, h, c);
+    if(!ret)
+    {
+        //JPG解码失败释放缓存
+        if(rgb_buf)
+        {
+            free(rgb_buf);
+            rgb_buf=NULL;
+        }
+        return false;
+    }
+    rw=w;
+    TH_PlateIDResult result[6];
+    int nResultNum=1;
+    TH_RECT roi_rect;
+    roi_rect.left= (int)w*0.05;
+    roi_rect.right=(int)w*0.95;
+    roi_rect.top = (int)h*0.05;
+    roi_rect.bottom = (int)h*0.95;
+    int nRet=TH_RecogImage(rgb_buf, w, h,  result, &nResultNum, &roi_rect, &c_Config);
+    //识别之后释放RGB缓存
+    if(rgb_buf)
+    {
+        free(rgb_buf);
+        rgb_buf=NULL;
+    }
+    if(nRet == 0)
+    {
+        if (nResultNum == 0) {
+            return false;
+        }
+        //车牌结果输出
+        strcpy(pVPR->license, result[0].license);
+        //车牌颜色处理
+        strcpy(pVPR->color, result[0].color);
+        pVPR->nColor = pcolor_transfer(result[0].nColor);
+        //车牌类型
+        pVPR->nType = result[0].nType;
+        //置信度
+        pVPR->nConfidence = result[0].nConfidence;
+        //车牌坐标
+        pVPR->left = result[0].rcLocation.left;
+        pVPR->right = result[0].rcLocation.right;
+        pVPR->top = result[0].rcLocation.top;
+        pVPR->bottom = result[0].rcLocation.bottom;
+        return true;
+    }
+    else{
+        return false;
+    }
+}

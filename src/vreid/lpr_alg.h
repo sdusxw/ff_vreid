@@ -35,4 +35,6 @@ bool vlpr_init();
 //车牌识别，输入为jpg图像指针和长度，输出识别结果，识别结果结构体需要调用方分配
 bool vlpr_analyze(const unsigned char *pImage, int len, PVPR pVPR);
 
+bool vlpr_analyze2(const unsigned char *pImage, int len, PVPR pVPR, int &w);
+
 #endif

@@ -332,7 +332,8 @@ int main(int argc, const char **argv) {
                 //调用识别引擎
                 bool b_plate = false;
                 std::string file_name;
-                if(vlpr_analyze((const unsigned char *)jp.p_jpg_image, jp.jpg_size, pvpr))
+                int rw=0;
+                if(vlpr_analyze2((const unsigned char *)jp.p_jpg_image, jp.jpg_size, pvpr,rw))
                 {
                     b_plate = true;
                     res_plateNo = pvpr->license;
@@ -386,13 +387,13 @@ int main(int argc, const char **argv) {
                 std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
                 jsonWriter->write(json_res, &os);
                 string alpr_body = os.str();
-                //cout << "Send:\n" << alpr_body << endl;
+                cout << "Send:\n" << alpr_body << endl;
                 JsonPusher json_pusher;
                 json_pusher.initialize();
                 string json_post_url = "http://172.31.49.252/data-collect/report/engine";
                 string json_ret = json_pusher.push_json(json_post_url, alpr_body);
-                //cout << "Josn Return:\n" << json_ret << endl;
-                if(!b_plate){// only save image when fail to recognize plate
+                cout << "Josn Return:\n" << json_ret << endl;
+                if(!b_plate||rw>4000){// only save image when fail to recognize plate & 4K resolution
                     FileInfo file_info;
                     file_info.len = jp.jpg_size;
                     file_info.p = (char*)malloc(file_info.len);
